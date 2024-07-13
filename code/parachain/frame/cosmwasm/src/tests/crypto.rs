@@ -5,8 +5,12 @@ use sha3::Keccak256;
 
 // took these from: https://github.com/CosmWasm/cosmwasm/blob/main/contracts/crypto-verify/tests/integration.rs
 const SECP256K1_MESSAGE: &[u8] = &hex!("5c868fedb8026979ebd26f1ba07c27eedf4ff6d10443505a96ecaf21ba8c4f0937b3cd23ffdc3dd429d4cd1905fb8dbcceeff1350020e18b58d2ba70887baa3a9b783ad30d3fbf210331cdd7df8d77defa398cdacdfc2e359c7ba4cae46bb74401deb417f8b912a1aa966aeeba9c39c7dd22479ae2b30719dca2f2206c5eb4b7");
-const SECP256K1_SIGNATURE: &[u8] = &hex!("207082eb2c3dfa0b454e0906051270ba4074ac93760ba9e7110cd9471475111151eb0dbbc9920e72146fb564f99d039802bf6ef2561446eb126ef364d21ee9c4");
-const SECP256K1_PUBLIC_KEY: &[u8] = &hex!("04051c1ee2190ecfb174bfe4f90763f2b4ff7517b70a2aec1876ebcfd644c4633fb03f3cfbd94b1f376e34592d9d41ccaf640bb751b00a1fadeb0c01157769eb73");
+//const SECP256K1_SIGNATURE: &[u8] = &hex!("207082eb2c3dfa0b454e0906051270ba4074ac93760ba9e7110cd9471475111151eb0dbbc9920e72146fb564f99d039802bf6ef2561446eb126ef364d21ee9c4");
+//const SECP256K1_PUBLIC_KEY: &[u8] = &hex!("04051c1ee2190ecfb174bfe4f90763f2b4ff7517b70a2aec1876ebcfd644c4633fb03f3cfbd94b1f376e34592d9d41ccaf640bb751b00a1fadeb0c01157769eb73");
+
+// derived from sp_core::crypto::DEV_PHRASE
+const SECP256K1_SIGNATURE: &[u8] = &hex!("5d4382a5de4b98ee1d9c729a5eda75c185c13698bd1911f487dc053cd464985a4156a9bbb14e4ca8cd7800246da504ceab3f7b4e991eb417586c074d0cb85cc9");
+const SECP256K1_PUBLIC_KEY: &[u8] = &hex!("045b26108e8b97479c547da4860d862dc08ab2c29ada449c74d5a9a58a6c46a8c4bd893eee2e9653dbf593c468491ec30359376e0aab8c64f3e8c4aaf643727987");
 
 // TEST 3 test vector from https://tools.ietf.org/html/rfc8032#section-7.1
 const ED25519_MESSAGE: &[u8] = &hex!("af82");
@@ -37,6 +41,22 @@ fn secp256k1_verify_verifies() {
 		let hash = Sha256::digest(message);
 
 		assert!(Cosmwasm::do_secp256k1_verify(&hash, &signature, &public_key))
+	})
+}
+
+#[test]
+fn secp256k1_recover_pubkey_recovers() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(1);
+		crate::mock::Timestamp::set_timestamp(1);
+		let message = SECP256K1_MESSAGE;
+		let signature = SECP256K1_SIGNATURE;
+		let hash = Sha256::digest(message);
+
+		assert_eq!(
+			Cosmwasm::do_secp256k1_recover_pubkey(&hash, &signature, 1),
+			Ok(SECP256K1_PUBLIC_KEY.to_vec())
+		);
 	})
 }
 
